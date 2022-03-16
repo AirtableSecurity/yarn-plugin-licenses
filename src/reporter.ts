@@ -2,8 +2,8 @@ import { Writable } from 'stream'
 
 import junitBuilder from 'junit-report-builder'
 
-import { LICENSE_FAILURE_TYPE, LicenseResults } from './types'
-import { printTable } from './utils'
+import { LICENSE_FAILURE_TYPE, LicenseResults, Result } from './types'
+import { printTable, ResultMap } from './utils'
 
 const PRINTABLE_REASON: { [k in LICENSE_FAILURE_TYPE]: string } = {
     missing: 'License could not be found.',
@@ -56,26 +56,35 @@ export async function printSummary({
     stdout: Writable
     configFilename?: string
 }): Promise<void> {
-    const isFailure = results.fail.size !== 0
+    printPasses(results.pass, stdout);
+    stdout.write('\n');
+    printFailures(results.fail, stdout);
+}
 
-    if (isFailure) {
-        const table = [['Package', 'License', 'Reason', 'Repository']]
-        const summaryResults = [
-            ...results.fail.entries(),
-        ].map(([name, result]) => [
-            name,
-            String(result.license || '?'),
-            String(result.reason || '?'),
-            String(result.repository || '?'),
-        ])
-        table.push(...summaryResults)
-        printTable(table, stdout)
-        if (configFilename) {
-            stdout.write(
-                `\nNOTE: For false positives, exceptions may be added to: ${configFilename}\n\n`,
-            )
-        }
-    } else {
-        stdout.write('All packages have compatible licenses.\n')
-    }
+function printPasses(pass: ResultMap<string, Result>, stdout: Writable) {
+    const table = [['Package', 'License', 'Reason', 'Repository']];
+    const summaryResults = [
+        ...pass.entries(),
+    ].map(([name, result]) => [
+        name,
+        String(result.license || '?'),
+        String('pass'),
+        String(result.repository || '?'),
+    ]);
+    table.push(...summaryResults);
+    printTable(table, stdout);
+}
+
+function printFailures(fail: ResultMap<string, Result>, stdout: Writable) {
+    const table = [['Package', 'License', 'Reason', 'Repository']]
+    const summaryResults = [
+        ...fail.entries(),
+    ].map(([name, result]) => [
+        name,
+        String(result.license || '?'),
+        String(result.reason || '?'),
+        String(result.repository || '?'),
+    ])
+    table.push(...summaryResults)
+    printTable(table, stdout)
 }

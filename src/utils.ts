@@ -57,7 +57,7 @@ export const printTable = (array: string[][], streamOut: Writable): void => {
     array.unshift(headers)
 
     const gutterSize = 2
-    const gutterMarker = ' '.repeat(gutterSize)
+    const gutterMarker = '\t'.repeat(gutterSize)
     const widths = headers.map(h => h.length)
 
     for (const row of array) {
